@@ -6,7 +6,7 @@
 #include "oamsim.h"
 
 
-#define NUM_CLI_COMMANDS 8
+#define NUM_CLI_COMMANDS 9
 #define ARG(p) if ((cmd = strtok(p, " ")) == NULL) \
 	            goto ERROR_COMMAND;
 
@@ -19,15 +19,15 @@ pthread_t ccm_tx_thread;
 
 //COMEBACK TLV
 char *cli_help[NUM_CLI_COMMANDS] =
-{"config mep mepid <val> md name <val> level <val> ma <val> assoc-id <val> interval <milliseconds> /* Returns mep interface*/",
- "destroy mep intf <mep interface>",
- "configure mep intf <mep interface> interval <milliseconds>",
- "set tlv mep-intf <mep interface> type <type-val> size <size-val> val <tlv-val>",
- "del tlv mep-intf <mep interface> type <type-val>",
- "send edm mep-intf <mep interface> duration <in seconds>"
- "show tlv mep-intf <mep interface>",
- "show status mep intf <mep interface>",
- "show all meps"
+{"config  mep    mepid    <val>             md name   <val>            level <val>     ma <val> assoc-id <val> interval <milliseconds>",
+ "destroy mep    intf     <mep interface>",
+ "config  mep    intf     <mep interface>   interval  <milliseconds>",
+ "set     tlv    mep-intf <mep interface>   type      <type-val>       size <size-val> val <tlv-val>",
+ "del     tlv    mep-intf <mep interface>   type      <type-val>",
+ "send    edm    mep-intf <mep interface>   duration  <in seconds>",
+ "show    tlv    mep-intf <mep interface>",
+ "show    status mep intf <mep interface>",
+ "show    all    meps"
 };
 
 int parse_cli_cmd_and_create_mep(struct oamsim_cli_msg *oam_msg)
