@@ -1,12 +1,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdlib.h>
 #include <pthread.h>
 
 #include "oamsim.h"
 
 
-#define NUM_CLI_COMMANDS 9
+#define NUM_CLI_COMMANDS 10
 #define ARG(p) if ((cmd = strtok(p, " ")) == NULL) \
 	            goto ERROR_COMMAND;
 
@@ -15,7 +18,13 @@
 #define CLI_STATUS(a) (a < OK) ? "ERROR" : "OK"
 
 pthread_t cli_thread;
+pthread_t py_thread;
 pthread_t ccm_tx_thread;
+
+int init_python_msg = FALSE;
+int is_cli_running = FALSE;
+int is_py_running = FALSE;
+
 
 //COMEBACK TLV
 char *cli_help[NUM_CLI_COMMANDS] =
@@ -27,7 +36,8 @@ char *cli_help[NUM_CLI_COMMANDS] =
  "send    edm    mep-intf <mep interface>   duration  <in seconds>",
  "show    tlv    mep-intf <mep interface>",
  "show    status mep intf <mep interface>",
- "show    all    meps"
+ "show    all    meps",
+ "exit"
 };
 
 int parse_cli_cmd_and_create_mep(struct oamsim_cli_msg *oam_msg)
@@ -174,30 +184,26 @@ int oam_show_mep_tlv(struct oamsim_cli_msg *msg)
     return OK;
 }
 
-void cli_thread_handler(void *ptr)
+int process_cli_command(uchar *argv)
 {
     int i;
     int result = -1;
-    char argv[500];
     char *cmd;
     struct oamsim_cli_msg oam_msg;
 
-    while (1) {
-	CLI("OAMSIM>"); 
-	gets(&argv);
-	if (strcmp(&argv, "\0") == 0)
-            continue;
-	else if (strcmp(&argv, "?") == 0) {
+	if (strcmp(argv, "\0") == 0)
+            return;
+	else if (strcmp(argv, "?") == 0) {
 	    for (i = 0; i < NUM_CLI_COMMANDS; i++)
 		CLI("%s\n", cli_help[i]);
 
-	    continue;
+	    return;
 	}
 
         /* Get the first command */	
-	ARG(&argv);
+	ARG(argv);
 
-	/* configure/destroy/set/del/show/send are the valid commands at this level */
+	/* configure/destroy/set/del/show/send/exit are the valid commands at this level */
 	if (strcmp(cmd, "config") == 0) {
 	    ARG(NULL);
 
@@ -217,7 +223,7 @@ void cli_thread_handler(void *ptr)
 		    /* Create mep and print mep-interface number */
 		    CLI("MEP interface: %d\n", parse_cli_cmd_and_create_mep(&oam_msg));
 
-		    continue;
+		    return;
 		} else if (strcmp(cmd, "intf") == 0) {
 		    ARG(NULL); /* MEP Interface id */
 		    sscanf(cmd, "%d", &oam_msg.mepIntf);
@@ -232,7 +238,7 @@ void cli_thread_handler(void *ptr)
 		        ARG(NULL);
 			sscanf(cmd, "%d", &oam_msg.mep_interval);
 		        CLI("%s\n", CLI_STATUS(oam_mep_interval_set(&oam_msg)));
-                        continue;
+                        return;
 	            }  /* end of interval subcommands */ 
 	        } /* end of mepid/mep-interface subcommands */ 
 	    } /* end of mep config command */
@@ -247,7 +253,7 @@ void cli_thread_handler(void *ptr)
 
 		    sscanf(cmd, "%d", &oam_msg.mepIntf);
 		    CLI("%s\n", CLI_STATUS(oam_mep_destroy(&oam_msg)));
-		    continue;
+		    return;
 		}
 	    }
 	} else if (strcmp(cmd, "set") == 0) { /* set tlv */
@@ -280,12 +286,12 @@ void cli_thread_handler(void *ptr)
 				    if (strlen(&oam_msg.tlv_val) > 40) {
 					LOG("TLV value length is to long. Maximum supported TLV length is 40 Bytes\n");
 					CLI("%s\n", CLI_STATUS(-1));
-				        continue;
+				        return;
 				    }
 				}
 				    
 				CLI("%s\n", CLI_STATUS(oam_mep_tlv_set(&oam_msg)));
-				continue;
+				return;
 			    }
 			}
 		    }
@@ -305,7 +311,7 @@ void cli_thread_handler(void *ptr)
 			ARG(NULL);
 			sscanf(cmd, "%d", &oam_msg.tlv_type);
 			CLI("%s\n", CLI_STATUS(oam_mep_tlv_delete(&oam_msg)));
-			continue;
+			return;
 		    }
 		}
 	    }
@@ -320,7 +326,7 @@ void cli_thread_handler(void *ptr)
 		     ARG(NULL);
 		     sscanf(cmd, "%d", &oam_msg.mepIntf);
 		     CLI("%s\n", CLI_STATUS(oam_show_mep_tlv(&oam_msg)));
-		     continue;
+		     return;
 		}
 	    } else if (strcmp(cmd, "status") == 0) {
 		ARG(NULL);
@@ -332,7 +338,7 @@ void cli_thread_handler(void *ptr)
 			ARG(NULL);
                         sscanf(cmd, "%d", &oam_msg.mepIntf);
 			CLI("%s\n", CLI_STATUS(oam_cli_mep_info_display(&oam_msg)));
-			continue;
+			return;
 		    }
 		}
 	    } else if (strcmp(cmd, "all") == 0) {
@@ -340,7 +346,7 @@ void cli_thread_handler(void *ptr)
 
 		if (strcmp(cmd, "meps") == 0) {
 		    CLI("%s\n", CLI_STATUS(oam_cli_print_all_meps()));
-		    continue;
+		    return;
 		}
 	    }
 	} else if (strcmp(cmd, "send") == 0) {
@@ -355,27 +361,84 @@ void cli_thread_handler(void *ptr)
 			ARG(NULL);
 			sscanf(cmd, "%d", &oam_msg.edm_duration);
 			CLI("%s\n", CLI_STATUS(oam_send_edm_pkt(&oam_msg)));
-			continue;
+			return;
 		    }
 		}
 	    }
+	} else if (strcmp(cmd, "exit") == 0) {
+	    oamsim_tx_cleanup();
+	    if (init_python_msg)
+		is_py_running = FALSE;
+            else
+	        is_cli_running = FALSE;
+
+	    return;
 	}
 
 ERROR_COMMAND: 
         CLI("Invalid command\n");	
-    }
 }
 
-pthread_t oamsim_cli_init()
+void cli_thread_handler(void *ptr)
 {
-    pthread_create(&cli_thread, NULL, cli_thread_handler, NULL);
-    return cli_thread;
+    char argv[500];
+
+    while (is_cli_running) {
+        CLI("OAMSIM>");
+        gets(&argv);
+        process_cli_command(&argv);
+    }
+
+    pthread_exit(NULL);
+}
+
+int oamsim_cli_init()
+{
+    is_cli_running = TRUE;
+    return pthread_create(&cli_thread, NULL, cli_thread_handler, NULL);
+}
+
+void py_thread_handler(void *ptr)
+{
+    int rd_fd = -1;
+    int wr_fd = -1;
+    char msg[500], argv[500];
+    char resp[500];
+
+    char *rd_fifo = "oamsim_msg";
+    char *wr_fifo = "oamsim_resp";
+
+    mkfifo(rd_fifo, 0666);
+    mkfifo(wr_fifo, 0666);
+
+    while (is_py_running) {
+	//memset(&argv, '\0', sizeof(argv));
+        memset(&msg, '\0', sizeof(msg));
+
+        /* read cmd from fifo */
+        rd_fd = open(rd_fifo, O_RDONLY);
+	read(rd_fd, &msg, sizeof(msg));
+	close(rd_fd);
+	//strncpy(&argv, &msg, strlen(&msg) - 1);
+        process_cli_command(&msg);
+	
+	wr_fd = open(wr_fifo, O_WRONLY);
+	write(wr_fd, "OK", strlen("OK") + 1);
+	close(wr_fd);
+    }
+
+    pthread_exit(NULL); 
+
+}
+
+int oamsim_python_msg_init()
+{
+    is_py_running = TRUE;
+    return pthread_create(&py_thread, NULL, py_thread_handler, NULL);
 }
 
 int main(int argc, char *argv[])
 {
-
-    int i;
     int result = -1;
     int sock_fd = -1;
     char *tmp1, *ethIntf;
@@ -385,27 +448,41 @@ int main(int argc, char *argv[])
 	//return -1;
     }
 
-    for (i = 1; i < argc; i++) {
-        tmp1 = strtok(argv[i], "=");
+        tmp1 = strtok(argv[1], "=");
 	if (tmp1 != NULL) {
 	    if (strcmp(tmp1, "interface") == 0) {
 		ethIntf = strtok(NULL, "");
 		if (ethIntf == NULL)
 	            return -1;
-            }
-	    else {
+            } else {
 	        printf("\n '%s' is not a valid argument. "
 			    "Supported arguments are:", tmp1);
 	        printf("\n\t interface=<interface name>");
 	    }
+
+	    if (argv[2] != NULL) {
+		if (strcmp(argv[2], "py") == 0) {
+		    init_python_msg = TRUE;
+		} 
+	    }
 	}
-    }
 
     result = oam_info_init();
     sock_fd = oamsim_network_interface_create(ethIntf);
-    ccm_tx_thread = oamsim_tx_init();
-    cli_thread = oamsim_cli_init();
-    pthread_join(cli_thread, NULL);
+    result = oamsim_tx_init();
+    if (!init_python_msg) {
+        result = oamsim_cli_init();
+    } else {
+        result = oamsim_python_msg_init();
+	system("python3 -i oamsim.py");
+    }
+
+    if (!init_python_msg)
+        pthread_join(cli_thread, NULL);
+    else
+	pthread_join(py_thread, NULL);
+
     pthread_join(ccm_tx_thread, NULL);
+
     return OK;
 }

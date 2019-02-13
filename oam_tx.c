@@ -20,6 +20,8 @@
 #include "oamsim.h"
 
 pthread_t ccm_tx_thread;
+int is_tx_running = FALSE;
+
 int skt_fd = -1;
 
 struct eth {
@@ -98,7 +100,7 @@ void ccm_tx_thread_handler(void *ptr)
     struct cfm_tx_mep *tx_mep;
     struct cfm_mep *mep;
 
-    while (1) {
+    while (is_tx_running) {
 	LOCK(&cfm_info.mutex);
 	tx_mep = cfm_info.mep_list;
 	gettimeofday(&time, NULL);
@@ -119,10 +121,18 @@ void ccm_tx_thread_handler(void *ptr)
 	}
 	UNLOCK(&cfm_info.mutex);
     }
+
+    pthread_exit(NULL);
 }
 
-pthread_t oamsim_tx_init(void)
+int oamsim_tx_init(void)
 {
-    pthread_create(&ccm_tx_thread, NULL, ccm_tx_thread_handler, NULL);
-    return ccm_tx_thread;
+    is_tx_running = TRUE;
+    return pthread_create(&ccm_tx_thread, NULL, ccm_tx_thread_handler, NULL);
+}
+
+int oamsim_tx_cleanup()
+{
+    is_tx_running = FALSE;
+    return close(skt_fd);
 }
