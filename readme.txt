@@ -75,28 +75,33 @@ This command allows user to delete the existing TLV from CCM packet.
 mep-intf     : Interrface ID of the MEP
 type         : TLV type
 
-e) send edm mep-intf <mep-interface> duration <in seconds>
+f) send edm mep-intf <mep-interface> duration <in seconds>
 
 This command allows user to send EDM packet out of ethernet interface. When this command is executed, the simulator would send a single EDM PDU of a mep. 
 
 mep-intf     : Interface ID of the MEP
 duaration    : This is inserted in EDM PDU TLV and it has nothing to do with transmit interval.
 
-f) show tlv mep-intf <mep interface> 
+g) show tlv mep-intf <mep interface> 
 
 Displays all the TLVs configured for a given MEP.
 
-g) show status mep intf <mep-interface>
+h) show status mep intf <mep-interface>
 
 Displays the status of a given MEP.
 
-h) show all meps
+i) show all meps
 
-Displays the configured MEPs
+Displays the configured MEPs.
+
+j) exit
+
+This command would exit the simulator.
 
 
 4) Running simulator:
 
-User can compile the simulator by issuing make from OAMSIM home directory. Once the code is compiled (ignore warning messages), oamsim binary is generated. 
-User must run the binary in root mode and pass the interface name as a command line argument. For example, "sudo ./oamsim interface=inteleth0" command
-would initialize the oam simulator on ethernet interface "inteleth0". Once the simulator is up, CLI is displayed where user can execute commands.
+User can compile the simulator by issuing make from OAMSIM home directory. Once the code is compiled (ignore warning messages), oamsim binary is generated. User must run the binary in root mode and pass the interface name as a command line argument. For example, "sudo ./oamsim interface=inteleth0" command would initialize the oam simulator on ethernet interface "inteleth0". Once the simulator is up, CLI is displayed where user can execute commands. 
+
+5) Running simulator with python terminal:
+Simulator also supports python3 terminal; to start simulator with python terminal, user has to pass 'py' command line argument while starting the simulator. For example, user can run coomand as follows to run the simulator with python terminal: "sudo ./oamsim interface=<interface name> py" (make sure that python3 is installed in the system). CLI commands can be executed from python terminal by calling tx.send_cmd("<cli command>") routine. For example, to exit the simulator, tx.send_cmd("exit") has to be called from python terminal.  
