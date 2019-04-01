@@ -194,7 +194,7 @@ struct cfm_mep* oam_mep_get(struct cfm_ma *ma, uint mep_id)
 
 int oam_build_tx_packet(struct cfm_mep *mep)
 {
-    int ccm_flags = 0;
+    int ccm_flags = (mep->cc.tx_interval) & 0x7;
     int maid_length = 0;
     int offset = 0;
     int tmp = 0;
