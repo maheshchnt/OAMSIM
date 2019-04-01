@@ -92,28 +92,41 @@ int oam_edm_pkt_tx(struct cfm_mep *mep)
 
 void ccm_tx_thread_handler(void *ptr)
 {
-    struct timeval time;
-    uint   time_ms;
+    struct timeval time, prev_time;
     uchar  *pkt;
     uchar  pkt_offset;
     int    tmp = 0;
     struct cfm_tx_mep *tx_mep;
     struct cfm_mep *mep;
+    uint   cur_time_stamp = 0;
+    int    sec_ctr, sec_diff;
+
+    gettimeofday(&prev_time, NULL);
 
     while (is_tx_running) {
 	LOCK(&cfm_info.mutex);
 	tx_mep = cfm_info.mep_list;
 	gettimeofday(&time, NULL);
-        time_ms = (time.tv_sec * 1000) + (time.tv_usec/1000);
+  
+	sec_diff = time.tv_sec - prev_time.tv_sec;
+	if ((cur_time_stamp + (sec_diff << SEC_POS)) > 0x3ff00000)
+            cur_time_stamp &= ~0xfff00000; /* counter overflow case*/
+	else
+            cur_time_stamp += sec_diff << SEC_POS;
+
+	cur_time_stamp &= 0xfff00000; 
+	cur_time_stamp |= time.tv_usec;
+	prev_time.tv_sec = time.tv_sec;
 
 	while (tx_mep != NULL) {
-	    if ((tx_mep->mep->cc.tx_interval != 0) && tx_mep->mep->cc.tx_interval <= (time_ms - tx_mep->mep->cc.tx_time_stamp)) {
+	    if ((tx_mep->mep->cc.timeval != 0) && 
+		(tx_mep->mep->cc.timeval <= (cur_time_stamp - tx_mep->mep->cc.tx_time_stamp))) {
 		pkt = &tx_mep->mep->cc.pkt;
 		SET_SEQ_NUM_IN_FRAME(tx_mep->mep->cc.tx_count);
 		if (write(skt_fd, &tx_mep->mep->cc.pkt, tx_mep->mep->cc.pkt_length) != tx_mep->mep->cc.pkt_length)
 		    LOG("PKT_TX failed\n");
 
-		tx_mep->mep->cc.tx_time_stamp = time_ms;
+		tx_mep->mep->cc.tx_time_stamp = cur_time_stamp;
 		tx_mep->mep->cc.tx_count++;
 	    }
 

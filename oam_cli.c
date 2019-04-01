@@ -30,9 +30,9 @@ int listen_port = 0x727a*2;
 //COMEBACK TLV
 char *cli_help[NUM_CLI_COMMANDS] =
 		{
-				"config  mep    mepid    <val>             md name   <val>            level <val>     ma <val> assoc-id <val> interval <milliseconds>",
+			        "config  mep    mepid    <val>             md name   <val>            level <val>     ma <val> assoc-id <val> period <1-7>",
 				"destroy mep    intf     <mep interface>",
-				"config  mep    intf     <mep interface>   interval  <milliseconds>",
+				"config  mep    intf     <mep interface>   period    <1-7>",
 				"set     tlv    mep-intf <mep interface>   type      <type-val>       size <size-val> val <tlv-val>",
 				"del     tlv    mep-intf <mep interface>   type      <type-val>",
 				"send    edm    mep-intf <mep interface>   duration  <in seconds>",
@@ -70,10 +70,10 @@ int parse_cli_cmd_and_create_mep(struct oamsim_cli_msg *oam_msg) {
 						/* config mep mepid <val> md name <val> level <val> ma <val> assoc-id <val>...*/
 						ARG(NULL);
 						sscanf(cmd, "%d", &oam_msg->assoc_id);
-						/* config mep mepid <val> md name <val> level <val> ma <val> assoc-id <val> interval...*/
+						/* config mep mepid <val> md name <val> level <val> ma <val> assoc-id <val> period...*/
 						ARG(NULL);
-						if (strcmp(cmd, "interval") == 0) {
-							/* config mep mepid <val> md name <val> level <val> ma <val> assoc-id <val> interval <val>...*/
+						if (strcmp(cmd, "period") == 0) {
+							/* config mep mepid <val> md name <val> level <val> ma <val> assoc-id <val> period <val>...*/
 							ARG(NULL);
 							sscanf(cmd, "%d", &oam_msg->mep_interval);
 							return oam_mep_create(oam_msg);
@@ -232,18 +232,18 @@ int process_cli_command(uchar *argv) {
 				ARG(NULL); /* MEP Interface id */
 				sscanf(cmd, "%d", &oam_msg.mepIntf);
 
-				/* Valid commands at this level are: interval
+				/* Valid commands at this level are: period
 				 *
-				 * cmd: configure mep mep-interface <val> interval/tlv ...
+				 * cmd: configure mep mep-interface <val> period/tlv ...
 				 *
 				 * */
 				ARG(NULL);
-				if (strcmp(cmd, "interval") == 0) {
+				if (strcmp(cmd, "period") == 0) {
 					ARG(NULL);
 					sscanf(cmd, "%d", &oam_msg.mep_interval);
-					CLI("%s\n", CLI_STATUS(oam_mep_interval_set(&oam_msg)));
+					CLI("%s\n", CLI_STATUS(oam_mep_interval_set(&oam_msg, NULL)));
 					return;
-				} /* end of interval subcommands */
+				} /* end of period subcommands */
 			} /* end of mepid/mep-interface subcommands */
 		} /* end of mep config command */
 	} else if (strcmp(cmd, "destroy") == 0) {

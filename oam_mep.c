@@ -358,6 +358,9 @@ int oam_mep_create(struct oamsim_cli_msg *msg)
     if (msg->md_level > 7 || msg->md_level < 0)
 	return INVALID;
 
+    if (msg->mep_interval < 1 || msg->mep_interval > 7)
+	return INVALID;
+
     /* Check if the MEP is already created */
     md = oam_md_get(&msg->md_name, msg->md_level);
     if (md != NULL) {
@@ -407,7 +410,7 @@ int oam_mep_create(struct oamsim_cli_msg *msg)
     mep->assoc_id       = msg->assoc_id;
     mep->md             = md;
     mep->ma             = ma;
-    mep->cc.tx_interval = msg->mep_interval; 
+    oam_mep_interval_set(msg, mep);
 
     /* Encoding the assoc-id in the dst mac address */
     dst_mac[5]  = msg->assoc_id & 0xFF;
@@ -480,25 +483,56 @@ struct cfm_mep* get_mep_by_intf(uint intf)
     return NULL;
 }
 
-int oam_mep_interval_set(struct oamsim_cli_msg *msg)
+/* THis function is called from two places: 1) from cli to set the period
+ *  2) from oam_mep_create
+ */
+int oam_mep_interval_set(struct oamsim_cli_msg *msg, struct cfm_mep *mep_info)
 {
     int    result;
     uint   mep_intf = msg->mepIntf;
-    int    interval = msg->mep_interval;
+    int    period = msg->mep_interval;
     struct cfm_tx_mep *mep_list = cfm_info.mep_list;
-    struct cfm_mep *mep;
+    struct cfm_mep *mep = mep_info;
 
-    if (is_mep_intf_valid(mep_intf) == FALSE)
-	return -1;
+    if (mep == NULL) {
+        if (is_mep_intf_valid(mep_intf) == FALSE)
+            return -1;
 
-    if (mep_list == NULL)
-	return -1;
+        if (mep_list == NULL)
+   	    return -1;
 
-    mep = get_mep_by_intf(mep_intf);
-    if (mep == NULL)
-	result -1;
+        mep = get_mep_by_intf(mep_intf);
+        if (mep == NULL)
+	    result -1;
+    } 
 
-    mep->cc.tx_interval = interval;
+    mep->cc.tx_interval = period;
+
+    switch (period) {
+	case 1:
+	    mep->cc.timeval = 3300;
+	    break;
+	case 2:
+	    mep->cc.timeval = 10000;
+	    break;
+	case 3:
+	    mep->cc.timeval = 100000;
+	    break;
+	case 4:
+	    mep->cc.timeval = 1 << SEC_POS;
+	    break;
+	case 5:
+	    mep->cc.timeval = 10 << SEC_POS;
+	    break;
+	case 6:
+	    mep->cc.timeval = 60 << SEC_POS;
+	    break;
+	case 7:
+	    mep->cc.timeval = 600 << SEC_POS;
+	    break;
+	default:
+            return -1;
+    }
 
     return 0;
 }

@@ -51,6 +51,8 @@ typedef unsigned int uint;
 				      pkt_offset++;\
 				  }
 
+#define SEC_POS 20
+
 /* cli message structure */
 struct oamsim_cli_msg
 {
@@ -122,7 +124,8 @@ struct cfm_ma {
 
 /* Continuity check message structure*/
 struct cfm_cc {
-    uint    tx_interval;    /* CC message interval */
+    int     tx_interval;
+    uint    timeval; /* CC message interval (0-19 bits for usec, 20-31 bits for sec) */
     uint    tx_time_stamp; /* last transmitted packet's time stamp*/
     uint    tx_count;
     uchar   pkt[CFM_PKT_LENGTH];
