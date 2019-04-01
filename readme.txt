@@ -33,7 +33,7 @@ CLI of the OAMSIM expects exact commands from the user; any typo in the command 
 
 Below are the CLI commands supported by current version of OAMSIM:
 
-a) config mep mepid <mepid val> md name <md name> level <md level> ma <ma name> assoc-id <association id period <1-7>
+a) config mep mepid <mepid val> md name <md name> level <md level> ma <ma name> assoc-id <association id interval <1-7>
 
 This command creates MD, MA, MEP, builds the CCM frame and initiates continues transmission of CCM frame. Once the MEP is created,
 the commands returns mep interface number which can be used as a reference to the MEP.
@@ -48,20 +48,20 @@ ma       : Only char string name is supported. MA and MD are used to encode MAID
 
 assoc-id : Proprietary value which is encoded in the destination mac address
 
-period : 1 - 33.3 ms
-         2 - 10   ms
-         3 - 100  ms
-         4 - 1    sec
-         5 - 10   sec
-         6 - 1    min
-         7 - 10   min
+Interval : 1 - 33.3 ms
+           2 - 10   ms
+           3 - 100  ms
+           4 - 1    sec
+           5 - 10   sec
+           6 - 1    min
+           7 - 10   min
 
 
 b) destroy mep intf <mep interface>
 
 This command destroys the above created by config mep... command. The only input to this command is mep interface.
 
-c) config mep intf <mep interface> period <1-7>
+c) config mep intf <mep interface> interval <1-7>
 
 This command allows user to change the CCM transmit time of a MEP.
 
