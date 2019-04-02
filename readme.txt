@@ -48,7 +48,8 @@ ma       : Only char string name is supported. MA and MD are used to encode MAID
 
 assoc-id : Proprietary value which is encoded in the destination mac address
 
-Interval : 1 - 33.3 ms
+Interval : 0 - Disable
+           1 - 33.3 ms
            2 - 10   ms
            3 - 100  ms
            4 - 1    sec

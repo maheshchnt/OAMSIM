@@ -30,9 +30,9 @@ int listen_port = 0x727a*2;
 //COMEBACK TLV
 char *cli_help[NUM_CLI_COMMANDS] =
 		{
-			        "config  mep    mepid    <val>             md name   <val>            level <val>     ma <val> assoc-id <val> interval <1-7>",
+			        "config  mep    mepid    <val>             md name   <val>            level <val>     ma <val> assoc-id <val> interval <0-7>",
 				"destroy mep    intf     <mep interface>",
-				"config  mep    intf     <mep interface>   interval  <1-7>",
+				"config  mep    intf     <mep interface>   interval  <0-7>",
 				"set     tlv    mep-intf <mep interface>   type      <type-val>       size <size-val> val <tlv-val>",
 				"del     tlv    mep-intf <mep interface>   type      <type-val>",
 				"send    edm    mep-intf <mep interface>   duration  <in seconds>",

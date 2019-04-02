@@ -358,7 +358,7 @@ int oam_mep_create(struct oamsim_cli_msg *msg)
     if (msg->md_level > 7 || msg->md_level < 0)
 	return INVALID;
 
-    if (msg->mep_interval < 1 || msg->mep_interval > 7)
+    if (msg->mep_interval < 0 || msg->mep_interval > 7)
 	return INVALID;
 
     /* Check if the MEP is already created */
@@ -509,6 +509,9 @@ int oam_mep_interval_set(struct oamsim_cli_msg *msg, struct cfm_mep *mep_info)
     mep->cc.tx_interval = period;
 
     switch (period) {
+	case 0:
+            mep->cc.timeval = 0;
+	    break;
 	case 1:
 	    mep->cc.timeval = 3300;
 	    break;
