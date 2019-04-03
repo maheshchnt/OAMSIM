@@ -420,6 +420,12 @@ int oam_mep_create(struct oamsim_cli_msg *msg)
     if (oam_build_tx_packet(mep) != OK)
         goto NO_MEM;
 
+    /* Assign credits to ccm packet */
+    if (msg->credits != 0)
+	mep->cc.credits = msg->credits;
+    else
+        mep->cc.credits = 0xffffffff;
+
     /* Create a tx mep node;this is used by ethernet driver to transmit CC*/
     tx_mep = malloc(sizeof(struct cfm_tx_mep));
     if (tx_mep == NULL) 

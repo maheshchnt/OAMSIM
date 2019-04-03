@@ -119,7 +119,7 @@ void ccm_tx_thread_handler(void *ptr)
 	prev_time.tv_sec = time.tv_sec;
 
 	while (tx_mep != NULL) {
-	    if ((tx_mep->mep->cc.timeval != 0) && 
+	    if (((tx_mep->mep->cc.timeval != 0) && tx_mep->mep->cc.credits != 0) &&
 		(tx_mep->mep->cc.timeval <= (cur_time_stamp - tx_mep->mep->cc.tx_time_stamp))) {
 		pkt = &tx_mep->mep->cc.pkt;
 		SET_SEQ_NUM_IN_FRAME(tx_mep->mep->cc.tx_count);
@@ -128,6 +128,9 @@ void ccm_tx_thread_handler(void *ptr)
 
 		tx_mep->mep->cc.tx_time_stamp = cur_time_stamp;
 		tx_mep->mep->cc.tx_count++;
+
+		if (tx_mep->mep->cc.credits != 0xffffffff)
+	            tx_mep->mep->cc.credits--;
 	    }
 
 	    tx_mep = tx_mep->list.nxt;

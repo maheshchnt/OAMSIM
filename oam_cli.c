@@ -10,9 +10,10 @@
 #include <arpa/inet.h>
 #include "oamsim.h"
 
-#define NUM_CLI_COMMANDS 10
 #define ARG(p) if ((cmd = strtok(p, " ")) == NULL) \
 	            goto ERROR_COMMAND;
+
+#define OPT_ARG(p) (cmd = strtok(p, " "))
 
 #define CLI printf
 
@@ -27,18 +28,21 @@ int is_cli_running = FALSE;
 int is_py_running = FALSE;
 int listen_port = 0x727a*2;
 
+#define NUM_CLI_COMMANDS 10
 //COMEBACK TLV
 char *cli_help[NUM_CLI_COMMANDS] =
-		{
-			        "config  mep    mepid    <val>             md name   <val>            level <val>     ma <val> assoc-id <val> interval <0-7>",
-				"destroy mep    intf     <mep interface>",
-				"config  mep    intf     <mep interface>   interval  <0-7>",
-				"set     tlv    mep-intf <mep interface>   type      <type-val>       size <size-val> val <tlv-val>",
-				"del     tlv    mep-intf <mep interface>   type      <type-val>",
-				"send    edm    mep-intf <mep interface>   duration  <in seconds>",
-				"show    tlv    mep-intf <mep interface>",
-				"show    status mep intf <mep interface>",
-				"show    all    meps", "exit" };
+{
+    "config  mep     mepid    <val>             md name   <val>         level <val>      ma <val> assoc-id <val> interval <0-7> (credits <val>)",
+    "destroy mep     intf     <mep interface>",
+    "config  mep     intf     <mep interface>   interval  <0-7>",
+    "set     tlv     mep-intf <mep interface>   type      <type-val>    size  <size-val> val <tlv-val>",
+    "del     tlv     mep-intf <mep interface>   type      <type-val>",
+    "send    edm     mep-intf <mep interface>   duration  <in seconds>",
+    "show    tlv     mep-intf <mep interface>",
+    "show    status  mep intf <mep interface>",
+    "show    all     meps", 
+    "exit" 
+};
 
 int parse_cli_cmd_and_create_mep(struct oamsim_cli_msg *oam_msg) {
 	char *cmd;
@@ -73,9 +77,17 @@ int parse_cli_cmd_and_create_mep(struct oamsim_cli_msg *oam_msg) {
 						/* config mep mepid <val> md name <val> level <val> ma <val> assoc-id <val> interval...*/
 						ARG(NULL);
 						if (strcmp(cmd, "interval") == 0) {
-							/* config mep mepid <val> md name <val> level <val> ma <val> assoc-id <val> interval <val>...*/
+							/* config mep mepid <val> md name <val> level <val> ma <val> assoc-id <val> interval <val> (credits <val>)...*/
 							ARG(NULL);
 							sscanf(cmd, "%d", &oam_msg->mep_interval);
+
+							if (OPT_ARG(NULL) != NULL) {
+							    if (strcmp(cmd, "credits") == 0) {
+							        ARG(NULL);
+							        sscanf(cmd, "%d", &oam_msg->credits);
+							    }
+							}
+
 							return oam_mep_create(oam_msg);
 						}
 					}
@@ -371,7 +383,7 @@ int process_cli_command(uchar *argv) {
 				}
 			}
 		}
-	} else if (strcmp(cmd, "exit") == 0) {
+        } else if (strcmp(cmd, "exit") == 0) {
 		oamsim_tx_cleanup();
 		if (init_python_msg)
 			is_py_running = FALSE;

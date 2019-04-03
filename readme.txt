@@ -33,7 +33,7 @@ CLI of the OAMSIM expects exact commands from the user; any typo in the command 
 
 Below are the CLI commands supported by current version of OAMSIM:
 
-a) config mep mepid <mepid val> md name <md name> level <md level> ma <ma name> assoc-id <association id interval <0-7>
+a) config mep mepid <mepid val> md name <md name> level <md level> ma <ma name> assoc-id <association id interval <0-7> (credits <val>)
 
 This command creates MD, MA, MEP, builds the CCM frame and initiates continues transmission of CCM frame. Once the MEP is created,
 the commands returns mep interface number which can be used as a reference to the MEP.
@@ -57,6 +57,7 @@ Interval : 0 - Disable
            6 - 1    min
            7 - 10   min
 
+credits  : This is an optional command to configure credits to ccm packet. If the value is 10, only 10 packets are transmitted. If credits are not specified, packet would be continuesly transmitted.  
 
 b) destroy mep intf <mep interface>
 
