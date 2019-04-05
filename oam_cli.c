@@ -440,8 +440,9 @@ void socket_thread_handler(void *ptr) {
 		int resp, resp_len = 0;
 		int cli_addr_len = sizeof(cliaddr);
 		char buffer [32];
-		int bytes = recvfrom(sockfd, msg, sizeof(msg), 0, &cliaddr, &cli_addr_len);
 
+		int bytes = recvfrom(sockfd, msg, sizeof(msg), 0, &cliaddr, &cli_addr_len);
+		msg[bytes] = 0;
 		printf ("Got message: %s\n",msg);
 		resp = process_cli_command(msg);
 		resp_len = sprintf(buffer, "%d", resp);
