@@ -349,7 +349,7 @@ int oam_mep_create(struct oamsim_cli_msg *msg)
     if (cfm_info.mep_count >= MAX_MEP)
         return FULL; /* No more room from new MEP */
 
-    if (msg->mepid > 8192 || msg->mepid < 1)
+    if (msg->mepid > 0xFFFF || msg->mepid < 1)
 	return INVALID;
 
     if ((strlen(&msg->ma_name) + strlen(&msg->md_name)) > 48)
